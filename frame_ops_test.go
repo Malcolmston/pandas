@@ -78,7 +78,8 @@ func TestFrameAbsRound(t *testing.T) {
 	xeqStr(t, xdump(col), []string{"1.25", "2.75"})
 	rd := df.Round(1)
 	col, _ = rd.Col("a")
-	xeqStr(t, xdump(col), []string{"-1.3", "2.8"})
+	// Round-half-to-even: -1.25 -> -1.2, 2.75 -> 2.8.
+	xeqStr(t, xdump(col), []string{"-1.2", "2.8"})
 	// String column untouched.
 	gcol, _ := rd.Col("g")
 	xeqStr(t, xdump(gcol), []string{"p", "q"})

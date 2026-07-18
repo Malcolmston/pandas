@@ -223,32 +223,61 @@ func xmean(v []float64) float64 {
 	return sum / float64(len(v))
 }
 
-// Rank returns the ranks of the present numeric values using the average method:
-// values are ranked from 1 (smallest) and tied values share the mean of the
-// ranks they span. Missing values remain missing. The result dtype is Float64.
-func (s *Series) Rank() *Series {
+// Rank returns the ranks of the present numeric values using the average
+// method, matching the pandas Series.rank default: values are ranked from 1
+// (smallest) and tied values share the mean of the ranks they span. Missing
+// values remain missing. The result dtype is Float64.
+func (s *Series) Rank() *Series { return s.RankBy("average") }
+
+// RankBy returns the ranks of the present numeric values, resolving ties
+// according to method, one of:
+//
+//   - "average": tied values share the mean of the ranks they span (the default).
+//   - "min":     tied values all take the lowest rank in the group.
+//   - "max":     tied values all take the highest rank in the group.
+//   - "first":   ties are broken by original position, giving distinct ranks.
+//   - "dense":   like "min" but group ranks always increase by one, leaving no
+//     gaps after ties.
+//
+// These mirror the pandas Series.rank method= argument. Missing values remain
+// missing and the result dtype is Float64. An unrecognised method falls back to
+// "average".
+func (s *Series) RankBy(method string) *Series {
 	vals, pos := s.xpresentFloats()
 	order := make([]int, len(vals))
 	for i := range order {
 		order[i] = i
 	}
+	// A stable sort by value keeps tied values in original-position order,
+	// which is exactly what the "first" method requires.
 	sort.SliceStable(order, func(a, b int) bool { return vals[order[a]] < vals[order[b]] })
 
 	ranks := make([]float64, len(vals))
+	dense := 0
 	i := 0
 	for i < len(order) {
 		j := i
 		for j+1 < len(order) && vals[order[j+1]] == vals[order[i]] {
 			j++
 		}
-		// ranks i..j (0-based) share average of (i+1)..(j+1) 1-based.
-		sum := 0.0
+		dense++
 		for k := i; k <= j; k++ {
-			sum += float64(k + 1)
-		}
-		avg := sum / float64(j-i+1)
-		for k := i; k <= j; k++ {
-			ranks[order[k]] = avg
+			switch method {
+			case "min":
+				ranks[order[k]] = float64(i + 1)
+			case "max":
+				ranks[order[k]] = float64(j + 1)
+			case "first":
+				ranks[order[k]] = float64(k + 1)
+			case "dense":
+				ranks[order[k]] = float64(dense)
+			default: // "average"
+				sum := 0.0
+				for m := i; m <= j; m++ {
+					sum += float64(m + 1)
+				}
+				ranks[order[k]] = sum / float64(j-i+1)
+			}
 		}
 		i = j + 1
 	}

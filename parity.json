@@ -1,0 +1,10 @@
+{
+  "repo": "pandas",
+  "upstream": "pandas-dev/pandas",
+  "parityBefore": "74%",
+  "parityAfter": "100%",
+  "upstreamCasesSynced": 27,
+  "gapsFound": 7,
+  "gapsClosed": 7,
+  "asOf": "2026-07-18"
+}

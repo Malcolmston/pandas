@@ -17,7 +17,8 @@ func TestAbs(t *testing.T) {
 func TestRound(t *testing.T) {
 	s := NewSeries("x", []any{1.234, 2.5, 2.678, nil})
 	xeqStr(t, xdump(s.Round(1)), []string{"1.2", "2.5", "2.7", "NA"})
-	xeqStr(t, xdump(s.Round(0)), []string{"1", "3", "3", "NA"})
+	// numpy/pandas use round-half-to-even, so 2.5 rounds to the even 2.
+	xeqStr(t, xdump(s.Round(0)), []string{"1", "2", "3", "NA"})
 }
 
 func TestClip(t *testing.T) {

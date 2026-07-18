@@ -50,8 +50,10 @@ func (s *Series) Abs() *Series {
 }
 
 // Round returns a copy with every present numeric value rounded to the given
-// number of decimal places (half away from zero). Missing values are preserved
-// and the result dtype is Float64.
+// number of decimal places. Ties (a value exactly halfway between two
+// candidates) are resolved to the nearest even digit — the round-half-to-even
+// ("banker's rounding") rule that numpy, and therefore pandas Series.round,
+// applies. Missing values are preserved and the result dtype is Float64.
 func (s *Series) Round(decimals int) *Series {
 	mult := math.Pow(10, float64(decimals))
 	data := make([]any, s.Len())
@@ -61,7 +63,7 @@ func (s *Series) Round(decimals int) *Series {
 		if !ok {
 			continue
 		}
-		data[i] = math.Round(f*mult) / mult
+		data[i] = math.RoundToEven(f*mult) / mult
 		valid[i] = true
 	}
 	return xbuildSeries(s.name, Float64, data, valid, s.index)
